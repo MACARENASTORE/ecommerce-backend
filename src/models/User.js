@@ -1,4 +1,3 @@
-// src/models/User.js
 const mongoose = require('mongoose');
 
 const userSchema = new mongoose.Schema({
@@ -14,6 +13,11 @@ const userSchema = new mongoose.Schema({
     password: {
         type: String,
         required: true
+    },
+    role: {
+        type: String,
+        enum: ['user', 'admin'], // Solo permite estos dos valores
+        default: 'user'          // Rol predeterminado para nuevos usuarios
     }
 });
 
