@@ -24,9 +24,9 @@ const productSchema = new mongoose.Schema({
         type: Number,
         default: 0
     },
-    imageUrl: {
-        type: String,
-        trim: true
+    image: { 
+        type: [String], 
+        required: true 
     },
     createdAt: {
         type: Date,
