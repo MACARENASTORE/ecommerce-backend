@@ -6,4 +6,4 @@ const storage = multer.memoryStorage();
 const upload = multer({ storage: storage });
 
 // Exporta el middleware para cargar un solo archivo
-module.exports = upload.single('image'); // Cambia 'image' por el nombre del campo que usarás para la imagen
+module.exports = upload.single('imageUrl'); // Cambia 'image' por el nombre del campo que usarás para la imagen
