@@ -1,60 +1,24 @@
 // src/services/invoiceService.js
 const Invoice = require('../models/Invoice');
 const Product = require('../models/Product');
+const { generateInvoicePDF } = require('../utils/invoiceGenerator');
 
-/**
- * Crea una nueva factura y actualiza el stock de productos.
- * @param {Object} data - Datos de la factura, incluyendo supplierId, invoiceNumber y productos.
- * @returns {Object} La factura creada.
- */
-async function createInvoice({ supplierId, invoiceNumber, products }) {
-  const totalAmount = products.reduce((acc, item) => acc + (item.purchasePrice * item.quantity), 0);
-  const session = await Invoice.startSession();
-  session.startTransaction();
+async function generateInvoicePDFData(invoiceId) {
+    // Busca la factura por ID y completa los detalles de cada producto
+    const invoice = await Invoice.findById(invoiceId)
+        .populate({
+            path: 'products.productId',
+            model: 'Product',
+            select: 'name price', // Incluye el nombre y precio
+        })
+        .populate('supplierId', 'name'); // Opcional: para incluir el nombre del proveedor
 
-  try {
-    // Crear y guardar la factura
-    const invoice = new Invoice({ supplierId, invoiceNumber, products, totalAmount });
-    await invoice.save({ session });
-
-    // Actualizar el stock de cada producto
-    for (const item of products) {
-      const product = await Product.findById(item.productId).session(session);
-      if (!product) throw new Error(`Producto no encontrado: ${item.productId}`);
-
-      product.stock += item.quantity;
-      await product.save({ session });
+    if (!invoice) {
+        throw new Error('Factura no encontrada');
     }
 
-    await session.commitTransaction();
-    session.endSession();
-    return invoice;
-  } catch (error) {
-    await session.abortTransaction();
-    session.endSession();
-    throw error;
-  }
+    // Genera el PDF con detalles completos
+    return generateInvoicePDF(invoice);
 }
 
-/**
- * Obtiene todas las facturas, incluyendo los datos del proveedor.
- * @returns {Array} Lista de facturas.
- */
-async function getAllInvoices() {
-  return await Invoice.find().populate('supplierId', 'name');
-}
-
-/**
- * Obtiene una factura específica por ID, incluyendo los datos del proveedor.
- * @param {String} invoiceId - ID de la factura.
- * @returns {Object} La factura encontrada.
- */
-async function getInvoiceById(invoiceId) {
-  return await Invoice.findById(invoiceId).populate('supplierId', 'name');
-}
-
-module.exports = {
-  createInvoice,
-  getAllInvoices,
-  getInvoiceById,
-};
+module.exports = { generateInvoicePDFData };
