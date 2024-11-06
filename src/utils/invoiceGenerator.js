@@ -7,6 +7,18 @@ const PDFDocument = require('pdfkit');
  * @returns {Buffer} Buffer del PDF generado.
  */
 async function generateInvoicePDFBuffer(order) {
+    // Verificar datos de la orden
+    if (!order || !order.userId || !order.products) {
+        console.error("Error: La orden, el usuario o los productos no están definidos correctamente.");
+        throw new Error('La orden o los productos no están definidos correctamente.');
+    }
+
+    console.log("Generando factura para orden:", order._id);
+    console.log("Información del cliente:", order.userId);
+    order.products.forEach((item, index) => {
+        console.log(`Producto ${index + 1}:`, item.productId);
+    });
+
     return new Promise((resolve, reject) => {
         const doc = new PDFDocument({ size: 'A4', margin: 50 });
         let buffers = [];
@@ -40,10 +52,11 @@ async function generateInvoicePDFBuffer(order) {
         doc.moveDown();
 
         // Información del cliente
+        const clientInfo = order.userId;
+        console.log("Información del cliente:", clientInfo); // Verificar contenido del cliente
         doc.fontSize(12).text("Facturado a:");
-        doc.fontSize(10).text(order.userId.name || "Cliente Genérico");
-        doc.text(`Dirección: ${order.userId.address || "Sin dirección"}`);
-        doc.text(`Teléfono: ${order.userId.phone || "Sin teléfono"}`);
+        doc.fontSize(10).text(clientInfo.username || "Cliente Genérico");
+        doc.text(`Correo: ${clientInfo.email || "No especificado"}`);
         doc.moveDown();
 
         // Línea divisoria
@@ -63,8 +76,9 @@ async function generateInvoicePDFBuffer(order) {
         doc.moveTo(50, tableTop + itemSpacing + 15).lineTo(550, tableTop + itemSpacing + 15).stroke();
 
         let position = tableTop + itemSpacing + 30;
-        order.products.forEach(item => {
-            doc.text(item.productId?.name || "Producto desconocido", 50, position); // Muestra el nombre del producto
+        order.products.forEach((item, index) => {
+            console.log(`Producto ${index + 1}:`, item.productId); // Verificar contenido del producto
+            doc.text(item.productId?.name || "Producto desconocido", 50, position);
             doc.text(item.quantity, 250, position);
             doc.text(`$${item.price.toFixed(2)}`, 350, position);
             doc.text(`$${(item.quantity * item.price).toFixed(2)}`, 450, position);

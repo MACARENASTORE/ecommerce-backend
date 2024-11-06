@@ -6,6 +6,7 @@ const { generateInvoicePDFBuffer } = require('../utils/invoiceGenerator');
 const { getStorage, ref, uploadBytes, getDownloadURL } = require('firebase/storage');
 const { initializeApp } = require('firebase/app');
 const config = require('../config/firebase.config');
+const mongoose = require('mongoose');
 
 // Inicializar Firebase
 initializeApp(config.firebaseConfig);
@@ -17,18 +18,20 @@ const storage = getStorage();
  * @returns {Object} La orden creada con la URL de la factura.
  */
 async function createOrderFromCart(userId) {
-    // Buscar el carrito del usuario y cargar detalles de productos
     const cart = await Cart.findOne({ userId }).populate('products.productId', 'name price');
-    if (!cart) throw new Error('El carrito está vacío');
+    console.log("Contenido del carrito para el usuario:", JSON.stringify(cart, null, 2));
 
-    // Calcular el monto total de la orden
+    if (!cart || !cart.products.length) {
+        throw new Error('El carrito está vacío');
+    }
+
     const totalAmount = cart.products.reduce((total, item) => total + item.price * item.quantity, 0);
+    console.log("Monto total de la orden:", totalAmount);
 
     const session = await Order.startSession();
     session.startTransaction();
 
     try {
-        // Crear la orden
         const order = new Order({
             userId,
             products: cart.products.map(item => ({
@@ -41,47 +44,52 @@ async function createOrderFromCart(userId) {
             createdAt: new Date(),
         });
         await order.save({ session });
+        console.log("Orden guardada con ID:", order._id);
 
-        // Actualizar el stock de productos
         for (const item of cart.products) {
             const product = await Product.findById(item.productId._id).session(session);
             if (!product) throw new Error(`Producto no encontrado: ${item.productId._id}`);
             product.stock -= item.quantity;
-            if (product.stock < 0) throw new Error(`Stock insuficiente para el producto: ${product.name}`);
             await product.save({ session });
+            console.log(`Nuevo stock para producto ${product.name}:`, product.stock);
         }
 
-        // Limpiar el carrito del usuario después de crear la orden
         await Cart.deleteOne({ userId }).session(session);
+        console.log("Carrito limpiado para usuario:", userId);
 
-        // Generar la factura en memoria
-        const invoiceBuffer = await generateInvoicePDFBuffer(order);
+        await session.commitTransaction();
+        session.endSession();
 
-        // Cargar el archivo de factura en Firebase Storage
+        // Segunda consulta para poblar la orden después de guardarla
+        const populatedOrder = await Order.findById(order._id)
+            .populate({ path: 'userId', select: 'username email' })
+            .populate({ path: 'products.productId', select: 'name price' });
+
+        console.log("Orden completamente poblada:", JSON.stringify(populatedOrder, null, 2));
+
+        if (!populatedOrder || !populatedOrder.products.length) {
+            console.error("Error en populatedOrder: Datos incompletos o vacíos");
+            throw new Error('La orden o los productos no están definidos correctamente.');
+        }
+
+        const invoiceBuffer = await generateInvoicePDFBuffer(populatedOrder);
+
         const fileName = `invoices/invoice_${order._id}.pdf`;
         const fileRef = ref(storage, fileName);
         await uploadBytes(fileRef, invoiceBuffer, { contentType: 'application/pdf' });
 
-        // Obtener la URL de descarga pública
         const invoiceUrl = await getDownloadURL(fileRef);
+        populatedOrder.invoiceUrl = invoiceUrl;
+        await populatedOrder.save();
 
-        // Guardar la URL de la factura en la orden
-        order.invoiceUrl = invoiceUrl;
-        await order.save({ session });
-
-        // Finalizar transacción
-        await session.commitTransaction();
-        session.endSession();
-
-        return order;
+        return populatedOrder;
     } catch (error) {
-        // Abortar transacción en caso de error
         await session.abortTransaction();
         session.endSession();
+        console.error("Error en createOrderFromCart (transacción):", error);
         throw error;
     }
 }
-
 /**
  * Obtener todas las órdenes con detalles de usuario y productos.
  * @returns {Array} Lista de órdenes
