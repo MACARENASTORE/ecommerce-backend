@@ -52,7 +52,12 @@ const login = async (req, res) => {
         // Generar un token JWT
         const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, { expiresIn: '1h' });
 
-        res.json({ message: "Inicio de sesión exitoso", token });
+        // Incluir el role en la respuesta
+        res.json({
+            message: "Inicio de sesión exitoso",
+            token,
+            role: user.role // Aquí añadimos el rol del usuario en la respuesta
+        });
     } catch (error) {
         console.error("Error en el inicio de sesión:", error.message);
         res.status(500).json({ message: "Error en el inicio de sesión" });
