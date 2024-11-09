@@ -1,7 +1,7 @@
 const Product = require('../models/Product');
 const productService = require('../services/productService');
-const { getStorage, ref, uploadBytesResumable, getDownloadURL } = require('firebase/storage');
 const { initializeApp } = require('firebase/app');
+const { getStorage } = require('firebase/storage');
 const config = require('../config/firebase.config');
 
 // Inicializar Firebase
@@ -12,10 +12,10 @@ const storage = getStorage();
 exports.createProduct = async (req, res) => {
     try {
         const product = await productService.createProduct(req);
-        res.status(201).json(product); // Responder con el producto creado
+        res.status(201).json(product);
     } catch (error) {
         console.error('Error creando el producto:', error.message);
-        res.status(500).json({ message: "Error creando el producto", error });
+        res.status(500).json({ message: 'Error creando el producto', error });
     }
 };
 
@@ -23,7 +23,7 @@ exports.createProduct = async (req, res) => {
 exports.getAllProducts = async (req, res) => {
     try {
         const products = await productService.getAllProducts();
-        res.status(200).json(products); // Responder con la lista de productos
+        res.status(200).json(products);
     } catch (error) {
         console.error('Error obteniendo los productos:', error.message);
         res.status(500).json({ message: 'Error obteniendo los productos' });
@@ -47,7 +47,7 @@ exports.getProductById = async (req, res) => {
 // Actualizar un producto
 exports.updateProduct = async (req, res) => {
     try {
-        const updatedProduct = await productService.updateProduct(req.params.id, req.body);
+        const updatedProduct = await productService.updateProduct(req.params.id, req);
         if (!updatedProduct) {
             return res.status(404).json({ message: 'Producto no encontrado' });
         }
