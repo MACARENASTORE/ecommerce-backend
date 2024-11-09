@@ -10,7 +10,7 @@ const router = express.Router();
 router.post('/', authMiddleware, adminMiddleware, invoiceController.createInvoice);
 
 // Obtener todas las facturas (solo administradores)
-router.get('/', authMiddleware, adminMiddleware, invoiceController.getInvoiceById);
+router.get('/', authMiddleware, adminMiddleware, invoiceController.getAllInvoices);
 
 // Obtener una factura por ID (solo administradores)
 router.get('/:id', authMiddleware, adminMiddleware, invoiceController.getInvoiceById);
