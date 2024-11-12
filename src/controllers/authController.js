@@ -81,4 +81,40 @@ const getProfile = async (req, res) => {
     }
 };
 
-module.exports = { register, login, getProfile };
+// Función para listar todos los usuarios
+const getAllUsers = async (req, res) => {
+    try {
+        const users = await User.find().select('-password'); // Excluir campo de contraseña
+        res.json(users);
+    } catch (error) {
+        console.error("Error al obtener usuarios:", error.message);
+        res.status(500).json({ message: "Error en el servidor" });
+    }
+};
+
+// Función para actualizar un usuario
+const updateUser = async (req, res) => {
+    const { id } = req.params;
+    const { username, email, role } = req.body;
+    try {
+        const updatedUser = await User.findByIdAndUpdate(id, { username, email, role }, { new: true });
+        res.json({ message: "Usuario actualizado", updatedUser });
+    } catch (error) {
+        console.error("Error al actualizar el usuario:", error.message);
+        res.status(500).json({ message: "Error en el servidor" });
+    }
+};
+
+// Función para eliminar un usuario
+const deleteUser = async (req, res) => {
+    const { id } = req.params;
+    try {
+        await User.findByIdAndDelete(id);
+        res.json({ message: "Usuario eliminado" });
+    } catch (error) {
+        console.error("Error al eliminar el usuario:", error.message);
+        res.status(500).json({ message: "Error en el servidor" });
+    }
+};
+
+module.exports = { register, login, getProfile, getAllUsers, updateUser, deleteUser };

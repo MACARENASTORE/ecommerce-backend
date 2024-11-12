@@ -6,15 +6,16 @@ const upload = require('../middlewares/imageUpload');
 
 const router = express.Router();
 
-// Rutas protegidas para administradores
-router.post('/', authMiddleware, adminMiddleware, upload, productController.createProduct);
-router.put('/:id', authMiddleware, adminMiddleware, upload, productController.updateProduct);
-router.delete('/:id', authMiddleware, adminMiddleware, productController.deleteProduct);
+// Ruta para obtener productos destacados (DEBE ir antes de '/:id')
+router.get('/featured', productController.getFeaturedProducts);
 
-// Obtener todos los productos
+// Rutas públicas
 router.get('/', productController.getAllProducts);
-
-// Obtener un producto por ID
 router.get('/:id', productController.getProductById);
+
+// Rutas protegidas para administradores
+router.post('/', authMiddleware, adminMiddleware, upload.array('image'), productController.createProduct);
+router.put('/:id', authMiddleware, adminMiddleware, upload.array('image'), productController.updateProduct);
+router.delete('/:id', authMiddleware, adminMiddleware, productController.deleteProduct);
 
 module.exports = router;
