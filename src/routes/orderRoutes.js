@@ -9,4 +9,8 @@ router.post('/', authMiddleware, orderController.createOrder);   // Crear una or
 router.get('/', authMiddleware, orderController.getAllOrders);   // Obtener todas las órdenes
 router.get('/:id', authMiddleware, orderController.getOrderById); // Obtener una orden por ID
 
+router.get('/', authMiddleware, adminMiddleware, orderController.getAllOrders); // Obtener todas las órdenes
+router.put('/:id/status', authMiddleware, adminMiddleware, orderController.updateOrderStatus); // Actualizar estado de una orden
+
+
 module.exports = router;

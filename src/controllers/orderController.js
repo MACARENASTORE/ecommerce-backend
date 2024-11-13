@@ -51,3 +51,32 @@ exports.getOrderById = async (req, res) => {
         res.status(500).json({ message: 'Error al obtener la orden' });
     }
 };
+
+/**
+ * Obtiene todas las órdenes del sistema.
+ */
+exports.getAllOrders = async (req, res) => {
+    try {
+        const orders = await Order.find().populate('userId', 'username').exec();
+        res.status(200).json(orders);
+    } catch (error) {
+        console.error('Error al obtener órdenes:', error);
+        res.status(500).json({ message: 'Error al obtener órdenes', error: error.message });
+    }
+};
+
+/**
+ * Actualiza el estado de una orden específica.
+ */
+exports.updateOrderStatus = async (req, res) => {
+    const { id } = req.params;
+    const { status } = req.body;
+
+    try {
+        const order = await Order.findByIdAndUpdate(id, { status }, { new: true });
+        res.status(200).json(order);
+    } catch (error) {
+        console.error('Error al actualizar el estado de la orden:', error);
+        res.status(500).json({ message: 'Error al actualizar el estado de la orden', error: error.message });
+    }
+};
