@@ -31,12 +31,6 @@ async function createOrderFromCart(userId, shippingAddress, paymentMethod) {
         throw new Error('El carrito está vacío o no existe.');
     }
 
-    cart.products.forEach(item => {
-        if (!item.productId || !item.productId._id) {
-            throw new Error(`Producto inválido en el carrito: ${JSON.stringify(item)}`);
-        }
-    });
-
     const totalAmount = cart.products.reduce((total, item) => total + item.price * item.quantity, 0);
 
     const session = await Order.startSession();

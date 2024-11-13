@@ -1,5 +1,6 @@
 // src/controllers/orderController.js
 const orderService = require('../services/orderService');
+const Order = require('../models/Order');
 
 /**
  * Crear una orden desde el carrito de compras.
@@ -9,12 +10,10 @@ exports.createOrder = async (req, res) => {
     try {
         const { shippingAddress, paymentMethod } = req.body;
 
-        // Verificar si ambos campos están presentes
         if (!shippingAddress || !paymentMethod) {
             return res.status(400).json({ message: 'Dirección de envío y método de pago son obligatorios.' });
         }
 
-        // Llamada al servicio para crear la orden
         const order = await orderService.createOrderFromCart(req.user.id, shippingAddress, paymentMethod);
         res.status(201).json({ message: 'Orden creada exitosamente', order });
     } catch (error) {
@@ -49,19 +48,6 @@ exports.getOrderById = async (req, res) => {
     } catch (error) {
         console.error('Error al obtener la orden:', error);
         res.status(500).json({ message: 'Error al obtener la orden' });
-    }
-};
-
-/**
- * Obtiene todas las órdenes del sistema.
- */
-exports.getAllOrders = async (req, res) => {
-    try {
-        const orders = await Order.find().populate('userId', 'username').exec();
-        res.status(200).json(orders);
-    } catch (error) {
-        console.error('Error al obtener órdenes:', error);
-        res.status(500).json({ message: 'Error al obtener órdenes', error: error.message });
     }
 };
 
