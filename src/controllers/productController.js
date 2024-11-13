@@ -129,3 +129,19 @@ exports.getFeaturedProducts = async (req, res) => {
         res.status(500).json({ message: "Error al obtener productos destacados" });
     }
 };
+
+exports.searchProducts = async (req, res) => {
+    const query = req.query.query;
+    try {
+        const products = await Product.find({
+            $or: [
+                { name: { $regex: query, $options: 'i' } },
+                { ean: { $regex: query, $options: 'i' } }
+            ]
+        });
+        res.status(200).json(products);
+    } catch (error) {
+        console.error("Error al buscar productos:", error);
+        res.status(500).json({ message: "Error al buscar productos" });
+    }
+};

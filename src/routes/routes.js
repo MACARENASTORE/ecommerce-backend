@@ -18,4 +18,5 @@ router.use('/suppliers', supplierRoutes);
 router.use('/orders', orderRoutes);
 router.use('/cart', cartRoutes); // Agrega las rutas del carrito
 
+
 module.exports = router;

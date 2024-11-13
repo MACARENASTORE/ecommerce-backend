@@ -31,6 +31,7 @@ exports.getInvoiceById = async (req, res) => {
     }
     res.status(200).json(invoice);
   } catch (error) {
+    console.error('Error al obtener la factura:', error.message);
     res.status(500).json({ message: 'Error al obtener la factura', error });
   }
 };

@@ -14,7 +14,19 @@ const orderSchema = new Schema({
     totalAmount: { type: Number, required: true },
     status: { type: String, enum: ['pending', 'completed', 'cancelled'], default: 'pending' },
     createdAt: { type: Date, default: Date.now },
-    invoiceUrl: { type: String } // URL de la factura en Firebase Storage
+    invoiceUrl: { type: String },
+    shippingAddress: {
+        street: String,
+        city: String,
+        state: String,
+        postalCode: String,
+        country: String
+    },
+    paymentMethod: { 
+        type: String, 
+        required: true, 
+        enum: ['credit_card', 'paypal', 'bank_transfer'] 
+    }
 });
 
 module.exports = mongoose.model('Order', orderSchema);

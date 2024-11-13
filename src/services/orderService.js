@@ -15,18 +15,29 @@ const storage = getStorage();
 /**
  * Crear una orden desde el carrito y generar una factura en Firebase.
  * @param {String} userId - ID del usuario.
+ * @param {Object} shippingAddress - Dirección de envío.
+ * @param {String} paymentMethod - Método de pago.
  * @returns {Object} La orden creada con la URL de la factura.
  */
-async function createOrderFromCart(userId) {
-    const cart = await Cart.findOne({ userId }).populate('products.productId', 'name price');
-    console.log("Contenido del carrito para el usuario:", JSON.stringify(cart, null, 2));
+async function createOrderFromCart(userId, shippingAddress, paymentMethod) {
+    console.log("Payment Method:", paymentMethod);
+    console.log("Shipping Address:", shippingAddress);
 
-    if (!cart || !cart.products.length) {
-        throw new Error('El carrito está vacío');
+    if (!paymentMethod) throw new Error('Método de pago no proporcionado');
+    if (!shippingAddress) throw new Error('Dirección de envío no proporcionada');
+
+    const cart = await Cart.findOne({ userId }).populate('products.productId', 'name price');
+    if (!cart || !cart.products || cart.products.length === 0) {
+        throw new Error('El carrito está vacío o no existe.');
     }
 
+    cart.products.forEach(item => {
+        if (!item.productId || !item.productId._id) {
+            throw new Error(`Producto inválido en el carrito: ${JSON.stringify(item)}`);
+        }
+    });
+
     const totalAmount = cart.products.reduce((total, item) => total + item.price * item.quantity, 0);
-    console.log("Monto total de la orden:", totalAmount);
 
     const session = await Order.startSession();
     session.startTransaction();
@@ -41,36 +52,26 @@ async function createOrderFromCart(userId) {
             })),
             totalAmount,
             status: 'pending',
+            shippingAddress,
+            paymentMethod,
             createdAt: new Date(),
         });
         await order.save({ session });
-        console.log("Orden guardada con ID:", order._id);
 
         for (const item of cart.products) {
             const product = await Product.findById(item.productId._id).session(session);
-            if (!product) throw new Error(`Producto no encontrado: ${item.productId._id}`);
+            if (!product) throw new Error(`Producto no encontrado para ID: ${item.productId._id}`);
             product.stock -= item.quantity;
             await product.save({ session });
-            console.log(`Nuevo stock para producto ${product.name}:`, product.stock);
         }
 
         await Cart.deleteOne({ userId }).session(session);
-        console.log("Carrito limpiado para usuario:", userId);
-
         await session.commitTransaction();
         session.endSession();
 
-        // Segunda consulta para poblar la orden después de guardarla
         const populatedOrder = await Order.findById(order._id)
             .populate({ path: 'userId', select: 'username email' })
             .populate({ path: 'products.productId', select: 'name price' });
-
-        console.log("Orden completamente poblada:", JSON.stringify(populatedOrder, null, 2));
-
-        if (!populatedOrder || !populatedOrder.products.length) {
-            console.error("Error en populatedOrder: Datos incompletos o vacíos");
-            throw new Error('La orden o los productos no están definidos correctamente.');
-        }
 
         const invoiceBuffer = await generateInvoicePDFBuffer(populatedOrder);
 
@@ -86,19 +87,20 @@ async function createOrderFromCart(userId) {
     } catch (error) {
         await session.abortTransaction();
         session.endSession();
-        console.error("Error en createOrderFromCart (transacción):", error);
+        console.error("Error en createOrderFromCart:", error);
         throw error;
     }
 }
+
 /**
  * Obtener todas las órdenes con detalles de usuario y productos.
- * @returns {Array} Lista de órdenes
+ * @returns {Array} Lista de órdenes.
  */
 async function getAllOrders() {
     try {
         return await Order.find()
-            .populate('userId', 'name')              // Poblamos detalles de usuario (nombre)
-            .populate('products.productId', 'name'); // Poblamos detalles de productos (nombre)
+            .populate('userId', 'name')
+            .populate('products.productId', 'name');
     } catch (error) {
         throw new Error('Error al obtener órdenes: ' + error.message);
     }
@@ -112,8 +114,8 @@ async function getAllOrders() {
 async function getOrderById(orderId) {
     try {
         return await Order.findById(orderId)
-            .populate('userId', 'name')               // Poblamos detalles de usuario (nombre)
-            .populate('products.productId', 'name');  // Poblamos detalles de productos (nombre)
+            .populate('userId', 'name')
+            .populate('products.productId', 'name');
     } catch (error) {
         throw new Error('Error al obtener la orden: ' + error.message);
     }

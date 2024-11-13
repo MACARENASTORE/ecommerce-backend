@@ -52,4 +52,14 @@ async function getAllInvoices() {
     }
 }
 
-module.exports = { createInvoice, getAllInvoices };
+async function getInvoiceById(id) {
+    try {
+        return await Invoice.findById(id).populate('supplierId').populate('products.productId');
+    } catch (error) {
+        console.error("Error al obtener la factura por ID:", error.message);
+        throw error;
+    }
+}
+
+module.exports = { createInvoice, getAllInvoices, getInvoiceById };
+

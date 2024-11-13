@@ -9,6 +9,9 @@ const router = express.Router();
 // Ruta para obtener productos destacados (DEBE ir antes de '/:id')
 router.get('/featured', productController.getFeaturedProducts);
 
+// Ruta de búsqueda por nombre o EAN
+router.get('/search', productController.searchProducts);
+
 // Rutas públicas
 router.get('/', productController.getAllProducts);
 router.get('/:id', productController.getProductById);
