@@ -1,3 +1,4 @@
+// src/routes/categoryRoutes.js
 const express = require('express');
 const categoryController = require('../controllers/categoryController');
 const authMiddleware = require('../middlewares/authMiddleware'); // Middleware de autenticación si es necesario
