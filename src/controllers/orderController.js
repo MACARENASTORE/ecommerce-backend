@@ -25,9 +25,13 @@ exports.createOrder = async (req, res) => {
 /**
  * Obtener todas las órdenes del sistema.
  */
+
+
 exports.getAllOrders = async (req, res) => {
     try {
-        const orders = await orderService.getAllOrders();
+        const orders = await Order.find()
+            .populate('userId', 'username') // Popula solo el campo 'username' del usuario
+            .exec();
         res.status(200).json(orders);
     } catch (error) {
         console.error('Error al obtener órdenes:', error);
@@ -64,5 +68,16 @@ exports.updateOrderStatus = async (req, res) => {
     } catch (error) {
         console.error('Error al actualizar el estado de la orden:', error);
         res.status(500).json({ message: 'Error al actualizar el estado de la orden', error: error.message });
+    }
+};
+
+exports.getUserOrders = async (req, res) => {
+    try {
+        const userId = req.user.id;
+        const orders = await Order.find({ userId }); // Busca órdenes solo para el usuario autenticado
+        res.status(200).json(orders);
+    } catch (error) {
+        console.error('Error al obtener las órdenes del usuario:', error);
+        res.status(500).json({ message: 'Error al obtener las órdenes del usuario' });
     }
 };

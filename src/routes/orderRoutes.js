@@ -6,12 +6,14 @@ const adminMiddleware = require('../middlewares/adminMiddleware');
 
 const router = express.Router();
 
-router.post('/', authMiddleware, orderController.createOrder);   // Crear una orden desde el carrito
-router.get('/', authMiddleware, orderController.getAllOrders);   // Obtener todas las órdenes (usuario autenticado)
-router.get('/:id', authMiddleware, orderController.getOrderById); // Obtener una orden por ID
+// Rutas para usuarios autenticados
+router.post('/', authMiddleware, orderController.createOrder); // Crear una orden
+router.get('/', authMiddleware, orderController.getUserOrders); // Obtener órdenes solo del usuario autenticado
+router.get('/:id', authMiddleware, orderController.getOrderById); // Obtener una orden específica por ID
 
 // Rutas exclusivas para administradores
-router.get('/admin', authMiddleware, adminMiddleware, orderController.getAllOrders); // Obtener todas las órdenes (administrador)
+router.get('/admin/all', authMiddleware, adminMiddleware, orderController.getAllOrders); // Obtener todas las órdenes (solo administrador)
 router.put('/:id/status', authMiddleware, adminMiddleware, orderController.updateOrderStatus); // Actualizar estado de una orden
 
 module.exports = router;
+
