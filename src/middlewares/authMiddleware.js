@@ -1,4 +1,3 @@
-// src/middlewares/authMiddleware.js
 const jwt = require('jsonwebtoken');
 const User = require('../models/User');
 require('dotenv').config();
@@ -6,12 +5,16 @@ require('dotenv').config();
 const authMiddleware = async (req, res, next) => {
     try {
         const authHeader = req.header('Authorization');
-        
+
         if (!authHeader || !authHeader.startsWith('Bearer ')) {
-            return res.status(401).json({ message: 'Autenticación requerida' });
+            return res.status(401).json({ message: 'Autenticación requerida: No se encontró el token.' });
         }
 
-        const token = authHeader.replace('Bearer ', '');
+        const token = authHeader.split(' ')[1]; // Obtén solo el token
+        if (!token) {
+            return res.status(401).json({ message: 'Autenticación requerida: Token inválido.' });
+        }
+
         const decoded = jwt.verify(token, process.env.JWT_SECRET);
         const user = await User.findById(decoded.id);
 
